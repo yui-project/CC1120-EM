@@ -1,0 +1,234 @@
+#pragma once
+
+// #define DEBUG
+// #define DEBUG_ULC
+//#define DEBUG_NC
+#define RELEASE
+
+#define ACK 0x06
+#define NCK 0x15
+#define LF 0x0A
+
+#define SOH 0x02
+#define EOT 0x04
+
+//NOTE:時間の定義
+/*#define MINUTE_1 1
+#define MINUTE_2 2
+#define MINUTE_3 3
+#define MINUTE_5 5*/
+//NOTE:RTCにアクセスできないため、ミリ秒で時間を設定
+#define MINUTE_1 60000
+#define MINUTE_2 120000
+#define MINUTE_3 180000
+#define MINUTE_5 300000
+#define MINUTE_30 6000
+#define HOUR_12 7200
+#define WEEK_4 5
+#define MONTH_1 43200
+#define RSP_START_UP_MINUTE 120000
+
+#define FIX_TO_255STAGE 255
+
+
+// TODO パラメータの設定
+#define per80Capa 0 // バッテリ残量が60%以上か
+#define per60Capa 0 //
+
+#define CS_A 19
+#define CS_B 25
+#define CS_C 22
+
+// NOTE:デコーダ用のピン
+#define CS_LORA 0
+#define CS_BACKUP 1
+#define CS_FRAM 2
+#define CS_ADC 3
+#define CS_IO_1 6
+#define CS_IO_2 5
+#define DEFALT 7
+
+//NOTE:ADC用のピン
+#define BACKUP_CURRENT 1
+#define LORA_CURRENT 2
+#define V_BAT 3
+#define FE_CURRENT 4
+#define RF_FE_CURRENT 5
+#define TEMP 6
+
+
+//NOTE:digitalPin
+#define LTCswitch 26
+#define LORA_PIN 21
+#define BACKUP_PIN 20
+
+//NOTE:ADC用のピン
+#define BACKUP_CURRENT 1
+#define LORA_CURRENT 2
+#define V_BAT 3
+#define FE_CURRENT 4
+#define RF_FE_CURRENT 5
+#define TEMP 6
+
+// NOTE:IOエキスパンダ用のピン
+#define MMC_THEATER 2
+#define PMC_RESET 3
+#define ANTENNA_DETECT 4
+#define PRE_RESET_MMC 5
+#define MISSION_MODULE 6
+#define GEO_DRDY 7 // TODO これは何？
+
+#define FRONT_END_TR 8
+#define FRONT_END_EN 9
+#define FRONT_END_BYP 10
+
+// NOTE:RFスイッチ1:Ra01(HIGH)/cc1120(LOW)
+#define RF_SWITCH_1_CTRL 11
+// NOTE:RFスイッチ2:RX(HIGH)/TX(LOW)
+#define RF_SWITCH_2_CTRL 12
+#define LORA_RESET 13
+#define BACKUP_RESET 15
+
+#define NUM_PIN_IO_EX1 7
+#define NUM_PIN_IO_EX2 8
+
+#define EMIT 1
+#define CONFIRMATION_OF_DELIVERY 2
+#define CONSTANTLY 3
+#define MISSION_OPERATION 4
+#define POSTURE_MONITORING 5
+#define POWER_MONITORING 6
+#define WIRELESS_TEST 7
+
+#define NO_CRISIS 0b00000000
+#define DOWNLINK_NOT_AVAILABLE_LORA 0b00000001
+#define DOWNLINK_NOT_AVAILABLE 0b00000010
+#define UPLINK_NOT_AVAILABLE_LORA 0b00000100
+#define UPLINK_NOT_AVAILABLE 0b00001000
+#define INITIAL_BATTERY_PROTECTION 0b00010000
+#define MEDIUM_BATTELY_PROTECTION 0b00100000
+#define STOP_MAIN_MC 0b01000000
+#define STOP_MISSION_MODULE 0b10000000
+
+// TODO なにこれ？
+#define LATE_BATTELY_PROTECTION
+
+#define FROM_SERIAL 0
+#define FROM_COM_DEVICE 1
+
+#define BYTE_1 8
+#define BYTE_2 16
+#define BYTE_3 24
+#define BYTE_4 32
+#define BYTE_5 40
+
+#define MODE1_DATA 0
+#define MODE2_DATA 1
+
+#define START_COMAND_MAIN_MC 1
+#define END_COMAND_MAIN_MC 32
+#define START_COMAND_MISSION 33
+#define END_COMAND_MISSION 55
+
+#define CW 0
+#define FSK 1
+#define LORA 2
+#define SERIAL 3
+
+#define SEND 1
+#define RECEIVE 0
+
+#define PMD_FIRST 0
+#define PMD_SECOND 1
+#define AD 2
+
+#define FREQUENCY_43705 437050E3
+#define FREQUENCY_437425 437425E3
+
+#define BANDWIDTH_7_8E3 0
+#define BANDWIDTH_10_4E3 1
+#define BANDWIDTH_15_6E3 2
+#define BANDWIDTH_20_8E3 3
+#define BANDWIDTH_31_25E3 4
+#define BANDWIDTH_41_7E3 5
+#define BANDWIDTH_62_5E3 6
+#define BANDWIDTH_125E3 7
+#define BANDWIDTH_250E3 8
+#define BANDWIDTH_MAX 9
+
+//NOTE:データのサイズ
+#define POST_DEPLOYMENT_DATA_SIZE 4
+#define STEADY_STATE_DATA_SIZE 21
+#define HKDATA_SIZE_FROM_PMC 14
+#define HKDATA_SIZE 27
+#define HKDATA_FOR_HEAT_VACUUM_SIZE 107
+#define SOLAR_SENSOR_DATA_SIZE 48
+#define IMU_DATA_SIZE 24
+#define GeoMag_DATA_SIZE 12
+#define COMDEVICE_DATA_SIZE 24
+
+
+#define BASIS_OF_BATTERY_CAPACITY 4000
+
+// NOTE:コマンド用のマクロ
+#define CONFIRM_START_MAIN_MC 1
+
+#define RECV_TSUKUTO_TIME 3
+#define SEND_TSUKUTO_TIME 4
+/*#define START_BACKUP_A 5
+#define STOP_BACKUP_A 6
+#define START_BACKUP_B 7
+#define STOP_BACKUP_B 8
+#define START_SOLAR_SENSOR 9*/
+#define IS_LORA_USE 5
+#define IS_FSK_USE 6
+#define IS_CW_USE 7
+#define SEND_COM_DEVICE_DATA 8
+#define IS_BIG_DATA_DL 9
+#define STOP_SOLAR_SENSOR 10
+#define STOP_BATTERY_HEATER 11
+#define START_BATTERY_HEATER 12
+#define STOP_ANTENNA_HEATER 13
+#define START_ANTENNA_HEATER 14
+#define RESTART_POWER_MC 15
+#define ANNOUNCE_STOP_MAIN_MC 16
+#define RESTART_MAIN_MC 17
+#define RESTART_DC_DC_CONVERTER 18
+#define RECV_HK_DATA 19
+#define SEND_POWER_MONITORING 20
+#define SEND_ATTITUDE_MONITORING 21
+//#define SAVE_HK_DATA 22
+#define RECV_SOLAR_SENSOR_DATA 22
+//#define LOAD_HK_DATA 23
+#define IS_IMAGE_DATA_DL 23
+#define CONFIRM_START_POWER_MC 24
+#define MODE1_TRANSFER 25
+#define GET_AFTER_EMIT_DATA 26
+#define GET_ROTATE_DATA 27
+#define NOTICE_ANTENNA_DEPLOYMENT 28
+#define ALLOW_READ_I2C_FRAM 29
+#define IS_MISSION_START 30
+#define SEND_UL_DATA 31
+#define SEND_DL_DATA 32
+
+#define GET_MISSION_MODULE_STATUS 33
+#define CONFIRM_STARTUP_PIC 34
+#define START_UP_RSP 35
+#define END_RSP 36
+#define RESTARTUP_RSP 37
+#define CONFIRM_STARTUP_RSP 38
+#define SEND_TSUKUTO_TIME_M 39
+#define SEND_HK_DATA_M 40
+#define SEND_TLE 41
+#define SEND_CAMERA_PARAMETER 42
+#define SEND_AD_PARAMETER 43
+#define START_PMD_MISSION 44
+#define START_AD_MISSION 45
+#define CONFIRM_MISSION_END 46
+#define ANNOUNCE_MISSION_MODULE_END 47
+#define GET_PMD_START_TIME 48
+#define GET_PMD_MISSION_DATA 49
+#define GET_AD_MISSION_DATA 50
+#define GET_CAMERA_TEST_DATA 51
+#define GET_CAMERA_DATA_FOR_PMD 52
+#define TAKE_PHOTO 53
