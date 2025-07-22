@@ -28,7 +28,8 @@
 class CC1120Class
 {
   public:
-    bool    begin();
+    bool    CWbegin();
+    bool    FSKbegin();
     bool    calibration();
     bool    setRegister(bool extAddr, uint8_t addr, uint8_t value);
     uint8_t showResister(bool extAddr, uint8_t addr);
@@ -277,32 +278,32 @@ class CC1120Class
 #define CW_SYNC2_VALUE             0x0B
 #define CW_SYNC1_VALUE             0x51
 #define CW_SYNC0_VALUE             0xDE
-#define CW_SYNC_CFG1_VALUE         0x0A
+#define CW_SYNC_CFG1_VALUE         0x0B
 #define CW_SYNC_CFG0_VALUE         0x17
-#define CW_DEVIATION_M_VALUE       0x26
-#define CW_MODCFG_DEV_E_VALUE      0x1D
-#define CW_DCFILT_CFG_VALUE        0x13
+#define CW_DEVIATION_M_VALUE       0x06
+#define CW_MODCFG_DEV_E_VALUE      0x1B
+#define CW_DCFILT_CFG_VALUE        0x1C
 #define CW_PREAMBLE_CFG1_VALUE     0x18
-#define CW_PREAMBLE_CFG0_VALUE     0x33
+#define CW_PREAMBLE_CFG0_VALUE     0x2A
 #define CW_FREQ_IF_CFG_VALUE       0x40
-#define CW_IQIC_VALUE              0x00
-#define CW_CHAN_BW_VALUE           0x03
+#define CW_IQIC_VALUE              0xC6
+#define CW_CHAN_BW_VALUE           0x08
 #define CW_MDMCFG1_VALUE           0x46
-#define CW_MDMCFG0_VALUE           0x04
-#define CW_SYMBOL_RATE2_VALUE      0x63
+#define CW_MDMCFG0_VALUE           0x05
+#define CW_SYMBOL_RATE2_VALUE      0x43
 #define CW_SYMBOL_RATE1_VALUE      0xA9
 #define CW_SYMBOL_RATE0_VALUE      0x2A
-#define CW_AGC_REF_VALUE           0x30
-#define CW_AGC_CS_THR_VALUE        0xEC
+#define CW_AGC_REF_VALUE           0x20
+#define CW_AGC_CS_THR_VALUE        0x19
 #define CW_AGC_GAIN_ADJUST_VALUE   0x00
-#define CW_AGC_CFG3_VALUE          0xD1
-#define CW_AGC_CFG2_VALUE          0x3F
-#define CW_AGC_CFG1_VALUE          0x32
-#define CW_AGC_CFG0_VALUE          0x9F
+#define CW_AGC_CFG3_VALUE          0x91
+#define CW_AGC_CFG2_VALUE          0x20
+#define CW_AGC_CFG1_VALUE          0xA9
+#define CW_AGC_CFG0_VALUE          0xCF
 #define CW_FIFO_CFG_VALUE          0x00
-#define CW_DEV_ADDR_VALUE          0x55
+#define CW_DEV_ADDR_VALUE          0x00
 #define CW_SETTLING_CFG_VALUE      0x0B
-#define CW_FS_CFG_VALUE            0x12
+#define CW_FS_CFG_VALUE            0x14
 #define CW_WOR_CFG1_VALUE          0x08
 #define CW_WOR_CFG0_VALUE          0x21
 #define CW_WOR_EVENT0_MSB_VALUE    0x00
@@ -312,13 +313,13 @@ class CC1120Class
 #define CW_PKT_CFG0_VALUE          0x20
 #define CW_RFEND_CFG1_VALUE        0x0F
 #define CW_RFEND_CFG0_VALUE        0x00
-#define CW_PA_CFG2_VALUE           0x7F
+#define CW_PA_CFG2_VALUE           0x7C
 #define CW_PA_CFG1_VALUE           0x56
-#define CW_PA_CFG0_VALUE           0x7D
+#define CW_PA_CFG0_VALUE           0x7C
 #define CW_PKT_LEN_VALUE           0xFF
 #define CW_IF_MIX_CFG_VALUE        0x00
-#define CW_FREQOFF_CFG_VALUE       0x00
-#define CW_TOC_CFG_VALUE           0x0A
+#define CW_FREQOFF_CFG_VALUE       0x22
+#define CW_TOC_CFG_VALUE           0x0B
 #define CW_MARC_SPARE_VALUE        0x00
 #define CW_ECG_CFG_VALUE           0x00
 #define CW_CFM_DATA_CFG_VALUE      0x00
@@ -328,9 +329,9 @@ class CC1120Class
 #define CW_RCCAL_OFFSET_VALUE      0x00
 #define CW_FREQOFF1_VALUE          0x00
 #define CW_FREQOFF0_VALUE          0x00
-#define CW_FREQ2_VALUE             0x6C
-#define CW_FREQ1_VALUE             0x80
-#define CW_FREQ0_VALUE             0x00
+#define CW_FREQ2_VALUE             0x6D
+#define CW_FREQ1_VALUE             0x43
+#define CW_FREQ0_VALUE             0x33
 #define CW_IF_ADC2_VALUE           0x02
 #define CW_IF_ADC1_VALUE           0xA6
 #define CW_IF_ADC0_VALUE           0x04
@@ -417,10 +418,10 @@ class CC1120Class
 #define CW_GPIO_STATUS_VALUE       0x00
 #define CW_FSCAL_CTRL_VALUE        0x01
 #define CW_PHASE_ADJUST_VALUE      0x00
-#define CW_PARTNUMBER_VALUE        0x48
-#define CW_PARTVERSION_VALUE       0x23
+#define CW_PARTNUMBER_VALUE        0x00
+#define CW_PARTVERSION_VALUE       0x00
 #define CW_SERIAL_STATUS_VALUE     0x00
-#define CW_MODEM_STATUS1_VALUE     0x10
+#define CW_MODEM_STATUS1_VALUE     0x01
 #define CW_MODEM_STATUS0_VALUE     0x00
 #define CW_MARC_STATUS1_VALUE      0x00
 #define CW_MARC_STATUS0_VALUE      0x00
@@ -443,7 +444,6 @@ class CC1120Class
 #define CW_NUM_RXBYTES_VALUE       0x00
 #define CW_FIFO_NUM_TXBYTES_VALUE  0x0F
 #define CW_FIFO_NUM_RXBYTES_VALUE  0x00
-
 
 
 // Register values

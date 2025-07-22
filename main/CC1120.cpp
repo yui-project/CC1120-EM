@@ -14,7 +14,49 @@ IoExpander IoEx;
 
 /// CC1120の初期化
 /// @return エラーコード(0は異常、1は正常)
-bool CC1120Class::begin(){
+bool CC1120Class::CWbegin(){
+  bool ret = 1;
+  reset();
+  Serial.println("Reset");
+  // CC1120_SERIAL.begin(9600);
+  CC1120_SPI.begin();
+  Serial.println("SPI start");  
+  Serial.println(ret);  
+  ret = IDLE();
+  Serial.println(ret);
+
+  pinMode(CC1120_POWER, OUTPUT);
+  pinMode(LoRa_POWER, OUTPUT);
+
+  DECODER.init();
+
+  DECODER.write(1);
+
+  digitalWrite(CC1120_POWER, HIGH);
+  digitalWrite(LoRa_POWER, HIGH);
+  delay(100);
+
+  IoEx.setPin(15, LOW);
+  IoEx.setPin(13, LOW);
+  delay(100);
+
+  digitalWrite(CC1120_POWER, LOW);
+  digitalWrite(LoRa_POWER, LOW);
+  delay(100);
+
+  IoEx.setPin(15, HIGH);
+  IoEx.setPin(13, LOW);
+  delay(100);
+
+  // Serial.print("IDLE");
+  // Serial.println(ret);
+  Serial.println(ret);
+  ret = setCW();
+  Serial.println("CW");
+  return ret;
+}
+
+bool CC1120Class::FSKbegin(){
   bool ret = 1;
   reset();
   Serial.println("Reset");
@@ -160,17 +202,17 @@ bool CC1120Class::recvUL(uint8_t *recvCommand)
 
 bool CC1120Class::setFREQ(uint8_t FREQ){
   bool ret = 1;
-  if(FREQ == 0){
+  if(FREQ == 0){ // 437.05MHz
     setRegister(1, 0x0C, 0x6D);  
     setRegister(1, 0x0D, 0x43);  
     setRegister(1, 0x0E, 0x33);  
   }
-  if(FREQ == 1){
+  if(FREQ == 1){ // 435.00MHz
     setRegister(1, 0x0C, 0x6C);  
     setRegister(1, 0x0D, 0xC0);  
     setRegister(1, 0x0E, 0x00);  
   }
-  if(FREQ == 2){
+  if(FREQ == 2){ // 437.3MHz
     setRegister(1, 0x0C, 0x6D);  
     setRegister(1, 0x0D, 0x5B);  
     setRegister(1, 0x0E, 0x33); 
@@ -181,17 +223,17 @@ bool CC1120Class::setFREQ(uint8_t FREQ){
 
 bool CC1120Class::setPWR(uint8_t PWR){
   bool ret = 1;
-  if(PWR == 3){
-    setRegister(0, 0x2B, 0x7F);   // 15dBm
+  if(PWR == 3){   // 15dBm
+    setRegister(0, 0x2B, 0x7F);
   }
-  if(PWR == 2){
-    setRegister(0, 0x2B, 0x74);   // 10dBm
+  if(PWR == 2){   // 10dBm
+    setRegister(0, 0x2B, 0x74);
   }
-  if(PWR == 1){
-    setRegister(0, 0x2B, 0x69);  // 5dBm
+  if(PWR == 1){  // 5dBm
+    setRegister(0, 0x2B, 0x69);
   }
-  if(PWR == 0){
-    setRegister(0, 0x2B, 0x43);   // -11dBm
+  if(PWR == 0){   // -11dBm
+    setRegister(0, 0x2B, 0x43);
   }
   ret = calibration();
   return ret;
