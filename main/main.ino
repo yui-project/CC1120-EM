@@ -24,12 +24,12 @@ void setup() {
 }
 
 void loop() {
-  // なにこれ。纐纈に聞きたい。
-  uint8_t rxdata[128] = {};
-  ret = CC1120.recvUL(rxdata);
-  if(rxdata[1] == 48){
-    CC1120.setPWR(rxdata[3]);
-  } 
+  // なにこれ。纐纈に聞きたい。多分関係ない。
+  // uint8_t rxdata[128] = {};
+  // ret = CC1120.recvUL(rxdata);
+  // if(rxdata[1] == 48){
+  //   CC1120.setPWR(rxdata[3]);
+  // } 
   
   // --- Set Frequency ---
   // 0:437.05MHz, 1:435.00MHz, 2:437.3MHz
