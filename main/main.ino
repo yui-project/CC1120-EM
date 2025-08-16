@@ -33,7 +33,8 @@ void loop() {
   
   // --- Set Frequency ---
   // 0:437.05MHz, 1:435.00MHz, 2:437.3MHz
-  ret = CC1120.setFREQ(0);
+  // ret = CC1120.setFREQ(0);
+  ret = CC1120.setFREQ(437.05);
   
   // --- Tx ---
   // 0:-11dBm, 1:5dBm, 2:10dBm, 3:15dBm

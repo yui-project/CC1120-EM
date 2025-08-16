@@ -1,3 +1,4 @@
+#include "arch/types.h"
 #include "HardwareSerial.h"
 #include "stdint.h"
 #include "CC1120.h"
@@ -200,23 +201,54 @@ bool CC1120Class::recvUL(uint8_t *recvCommand)
   return ret;
 }
 
-bool CC1120Class::setFREQ(uint8_t FREQ){
+// bool CC1120Class::setFREQ(uint8_t FREQ){
+//   bool ret = 1;
+//   if(FREQ == 0){ // 437.05MHz
+//     setRegister(1, 0x0C, 0x6D);  
+//     setRegister(1, 0x0D, 0x43);  
+//     setRegister(1, 0x0E, 0x33);  
+//   }
+//   if(FREQ == 1){ // 435.00MHz
+//     setRegister(1, 0x0C, 0x6C);  
+//     setRegister(1, 0x0D, 0xC0);  
+//     setRegister(1, 0x0E, 0x00);  
+//   }
+//   if(FREQ == 2){ // 437.3MHz
+//     setRegister(1, 0x0C, 0x6D);  
+//     setRegister(1, 0x0D, 0x5B);  
+//     setRegister(1, 0x0E, 0x33); 
+//   }
+
+//   ret = calibration();
+//   return ret;
+// }
+bool CC1120Class::setFREQ(float f_RF){ // f_RF (MHz)
   bool ret = 1;
-  if(FREQ == 0){ // 437.05MHz
-    setRegister(1, 0x0C, 0x6D);  
-    setRegister(1, 0x0D, 0x43);  
-    setRegister(1, 0x0E, 0x33);  
-  }
-  if(FREQ == 1){ // 435.00MHz
-    setRegister(1, 0x0C, 0x6C);  
-    setRegister(1, 0x0D, 0xC0);  
-    setRegister(1, 0x0E, 0x00);  
-  }
-  if(FREQ == 2){ // 437.3MHz
-    setRegister(1, 0x0C, 0x6D);  
-    setRegister(1, 0x0D, 0x5B);  
-    setRegister(1, 0x0E, 0x33); 
-  }
+  const unsigned long f_XOSC = 32; // (Mhz)
+  const int LO_Divider = 8;
+  const unsigned long TWO_POW_16 = 65536;
+  byte FREQ2_value;
+  byte FREQ1_value;
+  byte FREQ0_value;
+
+  unsigned long FREQ = f_RF * LO_Divider * TWO_POW_16 / f_XOSC;
+  FREQ2_value = (FREQ >> 16) & 0xFF;
+  FREQ1_value = (FREQ >> 8) & 0xFF;
+  FREQ0_value = FREQ & 0xFF;
+
+  Serial.print("f_RF: ");
+  Serial.println(f_RF);
+  Serial.print("FREQ2: ");
+  Serial.println(FREQ2_value);
+  Serial.print("FREQ1: ");
+  Serial.println(FREQ1_value);
+  Serial.print("FREQ0: ");
+  Serial.println(FREQ0_value);
+
+  setRegister(1, 0x0C, FREQ2_value);
+  setRegister(1, 0x0D, FREQ1_value);
+  setRegister(1, 0x0E, FREQ0_value);
+
   ret = calibration();
   return ret;
 }
@@ -239,7 +271,31 @@ bool CC1120Class::setPWR(uint8_t PWR){
   return ret;
 }
 
+// bool CC1120Class::setPWR(float PWR){
+//   bool ret = 1;
+//   const byte PA_CFG2_RESERVED_BIT6 = 1;
 
+//   int PA_POWER_RAMP = (PWR + 18) * 2 - 1;
+//   if (PA_POWER_RAMP < 0) {
+//     PA_POWER_RAMP = 0;
+//   }
+//   if (PA_POWER_RAMP > 63) {
+//     PA_POWER_RAMP = 63;
+//   }
+
+  byte pa_cfg2_value = (PA_CFG2_RESERVED_BIT6 << 6) | (PA_POWER_RAMP & 0x3F);
+  
+  // setRegister(0, 0x2B, pa_cfg2_value);
+  Serial.print("PWR: ");
+  Serial.println(PWR);
+  Serial.print("PA_POWER_RAMP: ");
+  Serial.println(PA_POWER_RAMP);
+  Serial.print("pa_cfg2_value: ");
+  Serial.println(pa_cfg2_value);
+
+  // ret = calibration();
+  return ret;
+}
 
 // bool CC1120Class::sendDLfromFram(uint64_t start, uint64_t end){
 //   uint64_t len = end-start+1;
