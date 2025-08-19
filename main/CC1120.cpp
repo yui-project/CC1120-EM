@@ -12,6 +12,26 @@ Decoder DECODER;
 IoExpander IoEx;
 // SpiFram FRAM;
 
+struct PowerSetting {
+  float dbm;
+  byte pa_power_ramp; // PA_CFG2のビット0-5に入る値
+};
+
+const PowerSetting fsk_power_table[] = {
+  {15.0, 0x3F}, {14.0, 0x3D}, {13.0, 0x3B}, {12.0, 0x39},
+  {11.0, 0x37}, {10.0, 0x34}, { 9.0, 0x32}, { 8.0, 0x2F},
+  { 7.0, 0x2D}, { 6.0, 0x2B}, { 5.0, 0x29}, { 4.0, 0x26},
+  { 3.0, 0x24}, { 2.0, 0x22}, { 1.0, 0x1F}, { 0.0, 0x1D},
+  {-3.0, 0x16}, {-6.0, 0x0F}, {-11.0, 0x03}
+};
+
+// --- ASK/OOK用ルックアップテーブル (12.5dBm to -11.5dBm) ---
+const PowerSetting ask_ook_power_table[] = {
+  {12.5, 0x3C}, {10.5, 0x38}, { 8.5, 0x34}, { 6.5, 0x30},
+  { 4.5, 0x2C}, { 2.5, 0x28}, { 0.5, 0x24}, {-1.5, 0x20},
+  {-3.5, 0x1C}, {-5.5, 0x18}, {-7.5, 0x14}, {-9.5, 0x10},
+  {-11.5, 0x0C}
+};
 
 /// CC1120の初期化
 /// @return エラーコード(0は異常、1は正常)
@@ -253,45 +273,75 @@ bool CC1120Class::setFREQ(float f_RF){ // f_RF (MHz)
   return ret;
 }
 
-bool CC1120Class::setPWR(uint8_t PWR){
-  bool ret = 1;
-  if(PWR == 3){   // 15dBm
-    setRegister(0, 0x2B, 0x7F);
-  }
-  if(PWR == 2){   // 10dBm
-    setRegister(0, 0x2B, 0x74);
-  }
-  if(PWR == 1){  // 5dBm
-    setRegister(0, 0x2B, 0x69);
-  }
-  if(PWR == 0){   // -11dBm
-    setRegister(0, 0x2B, 0x43);
-  }
-  ret = calibration();
-  return ret;
-}
-
-// bool CC1120Class::setPWR(float PWR){
+// bool CC1120Class::setPWR(uint8_t PWR){
 //   bool ret = 1;
-//   const byte PA_CFG2_RESERVED_BIT6 = 1;
-
-//   int PA_POWER_RAMP = (PWR + 18) * 2 - 1;
-//   if (PA_POWER_RAMP < 0) {
-//     PA_POWER_RAMP = 0;
+//   if(PWR == 3){   // 15dBm
+//     setRegister(0, 0x2B, 0x7F);
 //   }
-//   if (PA_POWER_RAMP > 63) {
-//     PA_POWER_RAMP = 63;
+//   if(PWR == 2){   // 10dBm
+//     setRegister(0, 0x2B, 0x74);
 //   }
+//   if(PWR == 1){  // 5dBm
+//     setRegister(0, 0x2B, 0x69);
+//   }
+//   if(PWR == 0){   // -11dBm
+//     setRegister(0, 0x2B, 0x43);
+//   }
+//   ret = calibration();
+//   return ret;
+// }
 
-  byte pa_cfg2_value = (PA_CFG2_RESERVED_BIT6 << 6) | (PA_POWER_RAMP & 0x3F);
+bool CC1120Class::setPWR(uint8_t modulation, float PWR){
+  bool ret = 1;
+  byte PA_POWER_RAMP = 0x03;
+  byte PA_CFG2_value = 0x03;
+  byte ASK_DEPTH = 0x03;
+  byte PA_CFG0_value = 0x1C;
+  const byte PA_CFG2_RESERVED_BIT6 = 0x01;
+  const byte PA_CFG0_RESERVED_BIT6 = 0x04;
+
+  // 使用するテーブルを選択
+  const PowerSetting* table;
+  size_t table_size;
+  if (modulation == 0) {
+    table = fsk_power_table;
+    table_size = sizeof(fsk_power_table) / sizeof(PowerSetting);
+  } else { // ASK_OOK
+    table = ask_ook_power_table;
+    table_size = sizeof(ask_ook_power_table) / sizeof(PowerSetting);
+  }
+
+  // テーブルから最も近い値を探す
+  int best_index = -1;
+  float min_diff = 1000.0;
+  for (size_t i = 0; i < table_size; i++) {
+    float diff = abs(table[i].dbm - PWR);
+    if (diff < min_diff) {
+      min_diff = diff;
+      best_index = i;
+    }
+  }
+
+  PA_POWER_RAMP = table[best_index].pa_power_ramp;
+  PA_CFG2_value = (PA_CFG2_RESERVED_BIT6 << 6) | (PA_POWER_RAMP & 0x3F);
+  // setRegister(0, 0x2B, PA_CFG2_value);
+
+  // CWの場合、PA_CFG0も設定
+  if (modulation == 1) {
+    ASK_DEPTH = PA_POWER_RAMP / 4;
+    PA_CFG0_value = (ASK_DEPTH << 3) | (PA_CFG0_RESERVED_BIT6 & 0x07);
+    // setRegister(0, 0x2D, PA_CFG0_value);
+  }
   
   // setRegister(0, 0x2B, pa_cfg2_value);
-  Serial.print("PWR: ");
-  Serial.println(PWR);
   Serial.print("PA_POWER_RAMP: ");
-  Serial.println(PA_POWER_RAMP);
-  Serial.print("pa_cfg2_value: ");
-  Serial.println(pa_cfg2_value);
+  Serial.println(PA_POWER_RAMP, HEX);
+  Serial.print("PA_CFG2_value: ");
+  Serial.println(PA_CFG2_value, HEX);
+  Serial.print("ASK_DEPTH: ");
+  Serial.println(ASK_DEPTH, HEX);
+  Serial.print("PA_CFG0_value: ");
+  Serial.println(PA_CFG0_value, HEX);
 
   // ret = calibration();
   return ret;
