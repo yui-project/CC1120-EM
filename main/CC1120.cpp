@@ -6,6 +6,7 @@
 #include "IoExpander.h"
 // #include "SpiFram.h"
 #include <SPI.h>
+#include <math.h>
 
 SPISettings settings(100000, MSBFIRST, SPI_MODE0);
 Decoder DECODER;
