@@ -12,6 +12,8 @@ Decoder DECODER;
 IoExpander IoEx;
 // SpiFram FRAM;
 
+const unsigned long F_XOSC = 32000000;
+
 struct PowerSetting {
   float dbm;
   byte pa_power_ramp; // PA_CFG2のビット0-5に入る値
@@ -32,6 +34,12 @@ const PowerSetting ask_ook_power_table[] = {
   {-3.5, 0x1C}, {-5.5, 0x18}, {-7.5, 0x14}, {-9.5, 0x10},
   {-11.5, 0x0C}
 };
+
+const uint8_t IQIC_table[] = {0x00, 0x46, 0x46, 0x46, 0x46, 0x46,
+                                    0x46, 0xC6, 0xC6, 0xC6, 0xC6,
+                                    0xC6, 0xC6, 0xC6, 0xC6, 0xC6,
+                                    0xC6, 0xC6, 0xC6, 0xC6, 0xC6,
+                                    0xC6, 0xC6, 0xC6, 0xC6, 0xC6};
 
 /// CC1120の初期化
 /// @return エラーコード(0は異常、1は正常)
@@ -221,75 +229,31 @@ bool CC1120Class::recvUL(uint8_t *recvCommand)
   return ret;
 }
 
-// bool CC1120Class::setFREQ(uint8_t FREQ){
-//   bool ret = 1;
-//   if(FREQ == 0){ // 437.05MHz
-//     setRegister(1, 0x0C, 0x6D);  
-//     setRegister(1, 0x0D, 0x43);  
-//     setRegister(1, 0x0E, 0x33);  
-//   }
-//   if(FREQ == 1){ // 435.00MHz
-//     setRegister(1, 0x0C, 0x6C);  
-//     setRegister(1, 0x0D, 0xC0);  
-//     setRegister(1, 0x0E, 0x00);  
-//   }
-//   if(FREQ == 2){ // 437.3MHz
-//     setRegister(1, 0x0C, 0x6D);  
-//     setRegister(1, 0x0D, 0x5B);  
-//     setRegister(1, 0x0E, 0x33); 
-//   }
-
-//   ret = calibration();
-//   return ret;
-// }
-bool CC1120Class::setFREQ(float f_RF){ // f_RF (MHz)
+bool CC1120Class::setFREQ(float FREQ){ // target_freq (MHz)
   bool ret = 1;
-  const unsigned long f_XOSC = 32; // (Mhz)
   const int LO_Divider = 8;
   const unsigned long TWO_POW_16 = 65536;
   byte FREQ2_value;
   byte FREQ1_value;
   byte FREQ0_value;
 
-  unsigned long FREQ = f_RF * LO_Divider * TWO_POW_16 / f_XOSC;
+  unsigned long FREQ_value = FREQ * LO_Divider * TWO_POW_16 / (F_XOSC / 1000000);
   FREQ2_value = (FREQ >> 16) & 0xFF;
   FREQ1_value = (FREQ >> 8) & 0xFF;
   FREQ0_value = FREQ & 0xFF;
 
-  Serial.print("f_RF: ");
-  Serial.println(f_RF);
-  Serial.print("FREQ2: ");
-  Serial.println(FREQ2_value);
-  Serial.print("FREQ1: ");
-  Serial.println(FREQ1_value);
-  Serial.print("FREQ0: ");
-  Serial.println(FREQ0_value);
+  // Serial.print("FREQ ");   Serial.printl(FREQ);         Serial.prinln(" Mhz");
+  // Serial.print("FREQ2: "); Serial.println(FREQ2_value); Serial.print(" (0x"); Serial.print(FREQ2_value, HEX); Serial.println(")");
+  // Serial.print("FREQ1: "); Serial.println(FREQ1_value); Serial.print(" (0x"); Serial.print(FREQ1_value, HEX); Serial.println(")");
+  // Serial.print("FREQ0: "); Serial.println(FREQ0_value); Serial.print(" (0x"); Serial.print(FREQ0_value, HEX); Serial.println(")");
 
-  setRegister(1, 0x0C, FREQ2_value);
-  setRegister(1, 0x0D, FREQ1_value);
-  setRegister(1, 0x0E, FREQ0_value);
+  setRegister(1, FREQ2, FREQ2_value);
+  setRegister(1, FREQ1, FREQ1_value);
+  setRegister(1, FREQ0, FREQ0_value);
 
   ret = calibration();
   return ret;
 }
-
-// bool CC1120Class::setPWR(uint8_t PWR){
-//   bool ret = 1;
-//   if(PWR == 3){   // 15dBm
-//     setRegister(0, 0x2B, 0x7F);
-//   }
-//   if(PWR == 2){   // 10dBm
-//     setRegister(0, 0x2B, 0x74);
-//   }
-//   if(PWR == 1){  // 5dBm
-//     setRegister(0, 0x2B, 0x69);
-//   }
-//   if(PWR == 0){   // -11dBm
-//     setRegister(0, 0x2B, 0x43);
-//   }
-//   ret = calibration();
-//   return ret;
-// }
 
 bool CC1120Class::setPWR(uint8_t modulation, float PWR){
   bool ret = 1;
@@ -303,10 +267,10 @@ bool CC1120Class::setPWR(uint8_t modulation, float PWR){
   // 使用するテーブルを選択
   const PowerSetting* table;
   size_t table_size;
-  if (modulation == 0) {
+  if (modulation == 0) { // (FSK)
     table = fsk_power_table;
     table_size = sizeof(fsk_power_table) / sizeof(PowerSetting);
-  } else { // ASK_OOK
+  } else { // modulation == 1 (ASK_OOK)
     table = ask_ook_power_table;
     table_size = sizeof(ask_ook_power_table) / sizeof(PowerSetting);
   }
@@ -324,25 +288,181 @@ bool CC1120Class::setPWR(uint8_t modulation, float PWR){
 
   PA_POWER_RAMP = table[best_index].pa_power_ramp;
   PA_CFG2_value = (PA_CFG2_RESERVED_BIT6 << 6) | (PA_POWER_RAMP & 0x3F);
-  // setRegister(0, 0x2B, PA_CFG2_value);
+  setRegister(0, PA_CFG2, PA_CFG2_value);
 
   // CWの場合、PA_CFG0も設定
   if (modulation == 1) {
     ASK_DEPTH = PA_POWER_RAMP / 4;
     PA_CFG0_value = (ASK_DEPTH << 3) | (PA_CFG0_RESERVED_BIT6 & 0x07);
-    // setRegister(0, 0x2D, PA_CFG0_value);
+    setRegister(0, PA_CFG0, PA_CFG0_value);
   }
   
-  // setRegister(0, 0x2B, pa_cfg2_value);
-  Serial.print("PA_POWER_RAMP: ");
-  Serial.println(PA_POWER_RAMP, HEX);
-  Serial.print("PA_CFG2_value: ");
-  Serial.println(PA_CFG2_value, HEX);
-  Serial.print("ASK_DEPTH: ");
-  Serial.println(ASK_DEPTH, HEX);
-  Serial.print("PA_CFG0_value: ");
-  Serial.println(PA_CFG0_value, HEX);
+  // Serial.print("PA_POWER_RAMP: "); Serial.print(PA_POWER_RAMP); Serial.print(" (0x"); Serial.print(PA_POWER_RAMP, HEX); Seria.println(")");
+  // Serial.print("PA_CFG2_value: "); Serial.print(PA_CFG2_value); Serial.print(" (0x"); Serial.print(PA_CFG2_value, HEX); Seria.println(")");
+  // Serial.print("ASK_DEPTH: ");     Serial.print(ASK_DEPTH);     Serial.print(" (0x"); Serial.print(ASK_DEPTH, HEX);     Seria.println(")");
+  // Serial.print("PA_CFG0_value: "); Serial.print(PA_CFG0_value); Serial.print(" (0x"); Serial.print(PA_CFG0_value, HEX); Seria.println(")");
 
+  ret = calibration();
+  return ret;
+}
+
+bool CC1120Class::setDEV(uint8_t modulation, float DEV){
+  bool ret = 1;
+  byte MODCFG_DEV_E_value = 0;
+  byte mode = 0x05;
+  DEV = DEV * 1000; // kHz→Hzに変換
+  if (modulation == 0) { // (FSK)
+    mode = 0x00;
+  }
+  else {// modulation == 1 (ASK/OOK)
+    mode = 0x03;
+  }
+
+  // DEV_E (指数部) を大きい方から試すことで、DEV_M (仮数部) の精度を最大化します
+  for (int DEV_E_value = 7; DEV_E_value >= 0; DEV_E_value--) {
+    double DEV_M_value;
+    if (DEV_E_value == 0) {
+      // DEV_E = 0 の場合の式を逆算
+      // m = f_dev * 2^23 / f_XOSC
+      DEV_M_value = ((double)DEV * 8388608.0) / F_XOSC;
+    } else {
+      // DEV_E > 0 の場合の式を逆算
+      // m = (f_dev * 2^24 / (f_XOSC * 2^DEV_E_value)) - 256
+      uint64_t power_of_2_e = 1ULL << DEV_E_value;
+      DEV_M_value = (((double)DEV * 16777216.0) / ((double)F_XOSC * power_of_2_e)) - 256.0;
+      DEV_M_value = round(DEV_M_value);
+    }
+    MODCFG_DEV_E_value = (mode << 3) | (DEV_E_value & 0x07);
+
+    // 計算されたmがレジスタの範囲内(0-255)かチェック
+    if (DEV_M_value >= 0.0 && DEV_M_value < 256.0) {
+      // 範囲内であれば、このeとmのペアを採用
+      // Serial.print("DEV: "); Serial.print(DEV / 1000); Serial.println("kHz");
+      // Serial.print("DEVIATION_M: "); Serial.print(DEV_M_value); Serial.print(" (0x"); Serial.print(DEV_M_value, HEX); Serial.println(")");
+      // Serial.print("MODCFG_DEV_E: "); Serial.print(MODCFG_DEV_E_value); Serial.print(" (0x"); Serial.print(MODCFG_DEV_E_value, HEX); Serial.println(")");
+      // Serial.print("DEV_E: "); Serial.print(DEV_E_value); Serial.print(" (0x"); Serial.print(DEV_E_value, HEX); Serial.println(")");
+      
+      setRegister(0, DEVIATION_M, DEV_M_value);
+      setRegister(0, MODCFG_DEV_E, MODCFG_DEV_E_value);
+      
+      ret = calibration();
+      return ret; // 最適な値が見つかったので終了
+    }
+  }
+
+  // すべてのeで範囲内のmが見つからなかった場合
+  // (偏差が大きすぎるか小さすぎる)
+  return 0;
+}
+
+bool CC1120Class::setSR(float R_symbol_k) {
+  bool ret = 1;
+  byte SYMBOL_RATE2 = 0;
+  byte SYMBOL_RATE1 = 0;
+  byte SYMBOL_RATE0 = 0;
+  double R_symbol = R_symbol_k * 1000.0;
+  
+  // 巨大な定数を64ビットで定義
+  const uint64_t TWO_POW_39 = 1ULL << 39; // 2^39
+  const uint64_t TWO_POW_38 = 1ULL << 38; // 2^38
+  const uint64_t TWO_POW_20 = 1ULL << 20; // 2^20
+
+  // Equation 8: SRATE_E = floor(log2(R_symbol * 2^39 / f_XOSC) - 20)
+  double e_float = floor(log(((double)R_symbol * TWO_POW_39) / F_XOSC) / log(2) - 20.0);
+  
+  byte SRATE_E;
+  uint32_t SRATE_M;
+
+  if (e_float < 1.0) {
+    // SRATE_E = 0 のケース
+    SRATE_E = 0;
+    // Equation 7 (逆算): SRATE_M = R_symbol * 2^38 / f_XOSC
+    SRATE_M = (uint32_t)round(((double)R_symbol * TWO_POW_38) / F_XOSC);
+  } else {
+    // SRATE_E > 0 のケース
+    SRATE_E = (byte)e_float;
+    // Equation 9: SRATE_M = (R_symbol * 2^39 / (f_XOSC * 2^SRATE_E)) - 2^20
+    SRATE_M = (uint32_t)round((((double)R_symbol * TWO_POW_39) / (F_XOSC * pow(2.0, SRATE_E))) - TWO_POW_20);
+  }
+
+  // なんでかわからんけど1ずれる
+  SRATE_M = SRATE_M - 1;
+
+  // データシートの注記: もしMが2^20に丸められたら、EをインクリメントしMを0にする
+  if (SRATE_M >= TWO_POW_20) {
+    SRATE_E++;
+    SRATE_M = 0;
+  }
+
+  // 20ビットのSRATE_Mと4ビットのSRATE_Eを3つのレジスタに分割
+  SYMBOL_RATE2 = ((SRATE_E & 0x0F) << 4) | ((SRATE_M >> 16) & 0x0F);
+  SYMBOL_RATE1 = (SRATE_M >> 8) & 0xFF;
+  SYMBOL_RATE0 = SRATE_M & 0xFF;
+
+  // Serial.print("Symbol Rate: "); Serial.print(R_symbol_k); Serial.println("ksps");
+  // Serial.print("SYMBOL_RATE2: "); Serial.print(SYMBOL_RATE2); Serial.print(" (0x"); Serial.print(SYMBOL_RATE2, HEX); Serial.println(")");
+  // Serial.print("SRATE_E: "); Serial.print(SRATE_E); Serial.print(" (0x"); Serial.print(SRATE_E, HEX); Serial.println(")");
+  // Serial.print("SRATE_M: "); Serial.print(SRATE_M); Serial.print(" (0x"); Serial.print(SRATE_M, HEX); Serial.println(")");
+  // Serial.print("SRATE_M_19_16: "); Serial.print((SRATE_M >> 16) & 0x0F); Serial.print(" (0x"); Serial.print((SRATE_M >> 16) & 0x0F, HEX); Serial.println(")");
+  // Serial.print("SYMBOL_RATE1: "); Serial.print(SYMBOL_RATE1); Serial.print(" (0x"); Serial.print(SYMBOL_RATE1, HEX); Serial.println(")");
+  // Serial.print("SYMBOL_RATE0: "); Serial.print(SYMBOL_RATE0); Serial.print(" (0x"); Serial.print(SYMBOL_RATE0, HEX); Serial.println(")");
+
+  setRegister(0, SYMBOL_RATE2, SYMBOL_RATE2);
+  setRegister(0, SYMBOL_RATE1, SYMBOL_RATE1);
+  setRegister(0, SYMBOL_RATE0, SYMBOL_RATE0);
+  
+  ret = calibration();
+  return ret;
+}
+
+bool CC1120Class::setBW(unsigned long RX_Filter_BW_k) {
+  bool ret = 1;
+  float actual_bw = 0;
+  byte IQIC_value = 0;
+  byte CHAN_BW_value = 0;
+  byte ADC_CIC_DECFACT = 0;
+  byte BB_CIC_DECFACT = 0;
+  unsigned long RX_Filter_BW = RX_Filter_BW_k * 1000;
+
+  int Decimation_Factor = 20;
+  byte BB_CIC_DECFACT1 = round((double)F_XOSC / ((double)Decimation_Factor * RX_Filter_BW * 8.0));
+  // レジスタの有効範囲(1-25)にクランプ
+  if (BB_CIC_DECFACT1 < 1) BB_CIC_DECFACT1 = 1;
+  if (BB_CIC_DECFACT1 > 25) BB_CIC_DECFACT1 = 25;
+  float actual_bw1 = (double)F_XOSC / ((double)Decimation_Factor * BB_CIC_DECFACT1 * 8.0);
+  float diff1 = abs(actual_bw1 - RX_Filter_BW);
+
+  Decimation_Factor = 32;
+  byte BB_CIC_DECFACT2 = round((double)F_XOSC / ((double)Decimation_Factor * RX_Filter_BW * 8.0));
+  // レジスタの有効範囲(1-25)にクランプ
+  if (BB_CIC_DECFACT2 < 1) BB_CIC_DECFACT2 = 1;
+  if (BB_CIC_DECFACT2 > 16) BB_CIC_DECFACT2 = 16;
+  float actual_bw2 = (double)F_XOSC / ((double)Decimation_Factor * BB_CIC_DECFACT2 * 8.0);
+  float diff2 = abs(actual_bw2 - RX_Filter_BW);
+  
+  if (diff1 > diff2 && (BB_CIC_DECFACT2 == 1 || BB_CIC_DECFACT2 == 2 || BB_CIC_DECFACT2 == 16)) {
+    BB_CIC_DECFACT = BB_CIC_DECFACT2;
+    actual_bw = actual_bw2 / 1000; // (kHz)
+  } else {
+    ADC_CIC_DECFACT = 0;
+    BB_CIC_DECFACT = BB_CIC_DECFACT1;
+    actual_bw = actual_bw1 / 1000; // (kHz)
+    ADC_CIC_DECFACT = 1;
+  }
+  IQIC_value = IQIC_table[BB_CIC_DECFACT];
+  CHAN_BW_value = (ADC_CIC_DECFACT << 6) | (BB_CIC_DECFACT & 0x3F);
+
+  Serial.print("RX_Filter_BW: "); Serial.print(RX_Filter_BW); Serial.println("kHz");
+  Serial.print("IQIC: "); Serial.print(IQIC_value); Serial.print(" (0x"); Serial.print(IQIC_value, HEX); Serial.println(")");
+  Serial.print("CHAN_BW: "); Serial.print(CHAN_BW_value); Serial.print(" (0x"); Serial.print(CHAN_BW_value, HEX); Serial.println(")");
+  Serial.print("ADC_CIC_DECFACT: "); Serial.print(ADC_CIC_DECFACT); Serial.print(" (0x"); Serial.print(ADC_CIC_DECFACT, HEX); Serial.println(")");
+  Serial.print("BB_CIC_DECFACT: "); Serial.print(BB_CIC_DECFACT); Serial.print(" (0x"); Serial.print(BB_CIC_DECFACT, HEX); Serial.println(")");
+  Serial.print("Actual BW: "); Serial.print(actual_bw); Serial.println("kHz");
+  Serial.println();
+    
+  // setRegister(0, IQIC, IQIC_value);
+  // setRegister(0, CHAN_BW, CHAN_BW);
+  
   // ret = calibration();
   return ret;
 }

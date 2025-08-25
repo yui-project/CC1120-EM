@@ -37,10 +37,11 @@ class CC1120Class
     bool    sendDL(uint8_t data);
     bool    sendDL(uint8_t *data, uint32_t len);
     bool    recvUL(uint8_t *recvCommand);
-    // bool    setFREQ(uint8_t FREQ);
-    bool    setFREQ(float f_RF);
-    // bool    setPWR(uint8_t PWR);
+    bool    setFREQ(float FREQ);
     bool    setPWR(uint8_t modulation, float PWR);
+    bool    setDEV(uint8_t modulation, float DEV);
+    bool    setSR(float R_symbol_k);
+    bool    setBW(unsigned long RX_Filter_BW_k);
     // bool    sendDLfromFram(uint64_t start, uint64_t end);
     bool    TX(uint8_t *payload, int32_t len);
     bool    RX(uint8_t *data, uint16_t limit=0);
